@@ -1,0 +1,1 @@
+{"tenantId":"default","userId":"default","operation":"question-answer","input":{"messages":{{messages}}},"pipelineName":"{{pipelineName}}","metadata":{"ragTag":"{{ragTag}}","timestamp":{{timestamp}}}}
