@@ -77,14 +77,14 @@ async function ensureBackend() {
   return null;
 }
 
-/** scope: 'chat' | 'rag' — which bucket to list (Chat tab vs RAG tab). */
+/** scope: 'chat' | 'rag' — which bucket to list (Chat tab vs RAG tab). Latest first. */
 export async function listConversations(scope) {
   const r = await ensureBackend();
   if (r) return r.listConversations(scope);
   const all = Array.from(conversations.values());
-  if (scope === 'chat') return all.filter((c) => !c.ragTag || c.ragTag === '');
-  if (scope === 'rag') return all.filter((c) => c.ragTag != null && c.ragTag !== '');
-  return all;
+  let list = scope === 'chat' ? all.filter((c) => !c.ragTag || c.ragTag === '') : scope === 'rag' ? all.filter((c) => c.ragTag != null && c.ragTag !== '') : all;
+  list = list.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  return list;
 }
 
 export async function getConversation(id) {

@@ -31,7 +31,11 @@ export default function App() {
   const fetchConversations = useCallback(async () => {
     const scope = tab === 'rag' ? 'rag' : 'chat';
     const { ok, data } = await apiJson(`${API}/conversations?scope=${scope}`);
-    if (ok && data) setConversations(data.conversations || []);
+    if (ok && data) {
+      const list = data.conversations || [];
+      setConversations(list);
+      setCurrentConversationId(list.length ? list[0].id : null);
+    }
   }, [tab]);
 
   const fetchRagTags = useCallback(async () => {
