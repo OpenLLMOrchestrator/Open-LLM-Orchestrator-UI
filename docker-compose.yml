@@ -1,0 +1,60 @@
+# Production-grade Docker Compose for Open LLM Orchestrator UI
+# Usage: docker compose up -d
+# Override env: set in .env or pass TEMPORAL_ADDRESS, REDIS_URL, etc.
+
+services:
+  open-llm-orchestrator-ui:
+    image: openllmorchestrator/open-llm-orchestrator-ui:latest
+    container_name: olo-ui
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8002}:8002"
+    environment:
+      NODE_ENV: production
+      PORT: 8002
+      TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-localhost:7233}
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+      TEMPORAL_TASK_QUEUE: ${TEMPORAL_TASK_QUEUE:-core-task-queue}
+      TEMPORAL_CHAT_WORKFLOW: ${TEMPORAL_CHAT_WORKFLOW:-CoreWorkflow}
+      TEMPORAL_WORKFLOW_ID_TEMPLATE: ${TEMPORAL_WORKFLOW_ID_TEMPLATE:-chat-{{pipelineId}}-{{timestamp}}}
+      TEMPORAL_WORKFLOW_CLASS: ${TEMPORAL_WORKFLOW_CLASS:-core-task-queue}
+      TEMPORAL_DOC_WORKFLOW: ${TEMPORAL_DOC_WORKFLOW:-CoreWorkflow}
+      TEMPORAL_DOC_WORKFLOW_ID_TEMPLATE: ${TEMPORAL_DOC_WORKFLOW_ID_TEMPLATE:-doc-ingest-{{ragTag}}-{{timestamp}}}
+      TEMPORAL_DOC_TASK_QUEUE: ${TEMPORAL_DOC_TASK_QUEUE:-core-task-queue}
+      USE_STUB_LLM: ${USE_STUB_LLM:-0}
+      TEMPLATES_DIR: ${TEMPLATES_DIR:-/mnt/templates}
+      REDIS_URL: ${REDIS_URL:-}
+      REDIS_HOST: ${REDIS_HOST:-}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      STORE_FILE: ${STORE_FILE:-}
+      PIPELINE_OPTIONS: ${PIPELINE_OPTIONS:-}
+      PIPELINE_OPTIONS_RAG: ${PIPELINE_OPTIONS_RAG:-}
+    env_file:
+      - .env
+    volumes:
+      # Pipeline templates (chat/upload .tpl files)
+      - ${TEMPLATES_VOLUME:-./templates-example}:/mnt/templates:ro
+      # Optional: persist file store when not using Redis (ensure /app/data is writable by container user)
+      # - app-data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8002/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Uncomment volume below and the app-data mount above if using STORE_FILE (e.g. /app/data/store.json)
+# volumes:
+#   app-data:

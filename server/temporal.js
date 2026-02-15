@@ -43,6 +43,19 @@ function fillEnvTemplate(template, vars) {
 }
 
 /**
+ * Build SearchAttributes for Temporal UI columns (pipelineName, operation, tenantId, userId).
+ * Values must be arrays for Keyword type. Omit keys with empty values so Temporal doesn't store nulls.
+ */
+function buildSearchAttributes({ pipelineName, operation, tenantId, userId }) {
+  const attrs = {};
+  if (pipelineName != null && String(pipelineName).trim()) attrs.pipelineName = [String(pipelineName).trim()];
+  if (operation != null && String(operation).trim()) attrs.operation = [String(operation).trim()];
+  if (tenantId != null && String(tenantId).trim()) attrs.tenantId = [String(tenantId).trim()];
+  if (userId != null && String(userId).trim()) attrs.userId = [String(userId).trim()];
+  return Object.keys(attrs).length ? attrs : undefined;
+}
+
+/**
  * Start document ingestion workflow: payload from upload.tpl, workflow name/ID/class from env.
  */
 export async function startDocumentIngestionWorkflow(ragTag, fileNames) {
@@ -63,13 +76,21 @@ export async function startDocumentIngestionWorkflow(ragTag, fileNames) {
   const workflowName = fillEnvTemplate(workflowNameTemplate, { ragTag: safeTag, timestamp });
   const workflowId = fillEnvTemplate(workflowIdTemplate, { ragTag: safeTag, timestamp });
 
-  console.log('[Temporal] Sending document ingestion — workflowName:', workflowName, 'workflowId:', workflowId, 'taskQueue:', taskQueue, 'payload:', JSON.stringify(payload));
+  const searchAttributes = buildSearchAttributes({
+    pipelineName: payload.pipelineName ?? `doc-${safeTag}`,
+    operation: payload.operation ?? 'documentIngestion',
+    tenantId: payload.tenantId ?? process.env.TEMPORAL_TENANT_ID ?? 'default',
+    userId: payload.userId ?? process.env.TEMPORAL_USER_ID ?? 'default',
+  });
+
+  console.log('[Temporal] Sending document ingestion — workflowName:', workflowName, 'workflowId:', workflowId, 'taskQueue:', taskQueue, 'searchAttributes:', searchAttributes, 'payload:', JSON.stringify(payload));
 
   try {
     const handle = await client.workflow.start(workflowName, {
       taskQueue,
       workflowId,
       args: [payload],
+      ...(searchAttributes && { searchAttributes }),
     });
     console.log('[Temporal] Received document ingestion — workflowId:', handle.workflowId, 'runId:', handle.firstExecutionRunId);
     return { started: true, workflowId: handle.workflowId, runId: handle.firstExecutionRunId };
@@ -128,13 +149,21 @@ export async function runChatPipeline(pipelineId, ragTag, messages) {
 
   const workflowResultTimeoutMs = Number(process.env.TEMPORAL_CHAT_RESULT_TIMEOUT_MS) || 120_000; // 2 min default
 
-  console.log('[Temporal] Sending chat — workflowName:', workflowName, 'workflowId:', workflowId, 'taskQueue:', taskQueue, 'pipelineId:', pipelineId, 'ragTag:', ragTag ?? null, 'payload:', JSON.stringify(payload));
+  const searchAttributes = buildSearchAttributes({
+    pipelineName: payload.pipelineName ?? pipelineId ?? 'default',
+    operation: payload.operation ?? 'chat',
+    tenantId: payload.tenantId ?? 'default',
+    userId: payload.userId ?? 'default',
+  });
+
+  console.log('[Temporal] Sending chat — workflowName:', workflowName, 'workflowId:', workflowId, 'taskQueue:', taskQueue, 'pipelineId:', pipelineId, 'ragTag:', ragTag ?? null, 'searchAttributes:', searchAttributes, 'payload:', JSON.stringify(payload));
 
   try {
     const handle = await client.workflow.start(workflowName, {
       taskQueue,
       workflowId,
       args: [payload],
+      ...(searchAttributes && { searchAttributes }),
     });
     const result = await new Promise((resolve, reject) => {
       const timeoutId = setTimeout(
