@@ -63,13 +63,15 @@ export async function startDocumentIngestionWorkflow(ragTag, fileNames) {
   const workflowName = fillEnvTemplate(workflowNameTemplate, { ragTag: safeTag, timestamp });
   const workflowId = fillEnvTemplate(workflowIdTemplate, { ragTag: safeTag, timestamp });
 
+  console.log('[Temporal] Sending document ingestion — workflowName:', workflowName, 'workflowId:', workflowId, 'taskQueue:', taskQueue, 'payload:', JSON.stringify(payload));
+
   try {
     const handle = await client.workflow.start(workflowName, {
       taskQueue,
       workflowId,
       args: [payload],
     });
-    console.log('[Temporal] Started document ingestion workflow:', handle.workflowId, 'runId:', handle.firstExecutionRunId);
+    console.log('[Temporal] Received document ingestion — workflowId:', handle.workflowId, 'runId:', handle.firstExecutionRunId);
     return { started: true, workflowId: handle.workflowId, runId: handle.firstExecutionRunId };
   } catch (err) {
     console.error('Temporal startDocumentIngestionWorkflow error:', err);
@@ -126,13 +128,14 @@ export async function runChatPipeline(pipelineId, ragTag, messages) {
 
   const workflowResultTimeoutMs = Number(process.env.TEMPORAL_CHAT_RESULT_TIMEOUT_MS) || 120_000; // 2 min default
 
+  console.log('[Temporal] Sending chat — workflowName:', workflowName, 'workflowId:', workflowId, 'taskQueue:', taskQueue, 'pipelineId:', pipelineId, 'ragTag:', ragTag ?? null, 'payload:', JSON.stringify(payload));
+
   try {
     const handle = await client.workflow.start(workflowName, {
       taskQueue,
       workflowId,
       args: [payload],
     });
-    console.log('[Temporal] Started chat workflow:', handle.workflowId, 'taskQueue:', taskQueue);
     const result = await new Promise((resolve, reject) => {
       const timeoutId = setTimeout(
         () => reject(new Error(`Workflow did not complete within ${workflowResultTimeoutMs / 1000}s. Ensure a Worker is running on task queue "${taskQueue}" with workflow "${workflowName}".`)),
@@ -149,6 +152,7 @@ export async function runChatPipeline(pipelineId, ragTag, messages) {
         }
       );
     });
+    console.log('[Temporal] Received chat — workflowId:', handle.workflowId, 'result:', JSON.stringify(result));
     const reply = extractReply(result);
     return { success: true, reply };
   } catch (err) {
