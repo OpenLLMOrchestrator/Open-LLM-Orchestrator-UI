@@ -107,6 +107,19 @@ export default function ChatView({
 
   const hasConversation = conversationId != null;
 
+  const suggestionButtons = [
+    'Hi',
+    'Would like to know more',
+    'Explain in simple terms',
+    'Summarize this',
+    'What can you do?',
+  ];
+
+  const onSuggestionClick = (text) => {
+    setInput(text);
+    inputRef.current?.focus();
+  };
+
   return (
     <div className={`chat-view ${!hasConversation ? 'empty' : ''}`}>
       {!hasConversation && (
@@ -138,6 +151,20 @@ export default function ChatView({
         <div ref={messagesEndRef} />
       </div>
       <div className="input-area">
+        <div className="suggestion-chips">
+          {suggestionButtons.map((label) => (
+            <button
+              key={label}
+              type="button"
+              className="suggestion-chip"
+              onClick={() => onSuggestionClick(label)}
+              disabled={sending}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="input-row">
         <textarea
           ref={inputRef}
           value={input}
@@ -154,6 +181,7 @@ export default function ChatView({
         >
           Send
         </button>
+        </div>
       </div>
     </div>
   );

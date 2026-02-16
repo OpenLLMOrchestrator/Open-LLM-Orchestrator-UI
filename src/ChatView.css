@@ -117,12 +117,46 @@
 }
 
 .input-area {
-  padding: 16px 24px 24px;
+  padding: 12px 24px 24px;
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-main);
+}
+
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion-chip {
+  padding: 8px 14px;
+  font-size: 13px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.suggestion-chip:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.suggestion-chip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.input-area .input-row {
   display: flex;
   gap: 12px;
   align-items: flex-end;
-  background: var(--bg-main);
 }
 
 .input-area textarea {
