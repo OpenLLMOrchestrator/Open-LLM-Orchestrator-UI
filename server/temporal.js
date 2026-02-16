@@ -74,7 +74,11 @@ export async function startDocumentIngestionWorkflow(ragTag, fileNames) {
   const taskQueue = process.env.TEMPORAL_DOC_TASK_QUEUE || process.env.TEMPORAL_TASK_QUEUE || TASK_QUEUE;
 
   const workflowName = fillEnvTemplate(workflowNameTemplate, { ragTag: safeTag, timestamp });
-  const workflowId = fillEnvTemplate(workflowIdTemplate, { ragTag: safeTag, timestamp });
+  let workflowId = fillEnvTemplate(workflowIdTemplate, { ragTag: safeTag, timestamp });
+  // Defensive: if template had a typo (e.g. {{ragTag}-{{timestamp}} missing }}), fix leftover placeholder
+  if (workflowId.includes('{{ragTag}}') || workflowId.includes('{{ragTag}')) {
+    workflowId = workflowId.replace(/\{\{ragTag\}\}/g, safeTag).replace(/\{\{ragTag\}(?!\})/g, safeTag);
+  }
 
   const searchAttributes = buildSearchAttributes({
     pipelineName: payload.pipelineName ?? `doc-${safeTag}`,
