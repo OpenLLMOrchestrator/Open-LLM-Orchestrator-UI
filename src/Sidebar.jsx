@@ -16,6 +16,7 @@ export default function Sidebar({
   onNewChat,
   onDeleteConversation,
   onRefreshConversations,
+  onClearAll,
   loading,
 }) {
   return (
@@ -93,41 +94,54 @@ export default function Sidebar({
 
           <div className="sidebar-section conversations">
             <div className="sidebar-label">Conversations</div>
-            {conversations.length === 0 && (
-              <p className="sidebar-empty">No conversations yet.</p>
-            )}
-            <ul className="conversation-list">
-              {conversations.map((c) => (
-                <li key={c.id} className="conversation-item">
-                  <button
-                    className={`conv-btn ${currentConversationId === c.id ? 'active' : ''}`}
-                    onClick={() => setCurrentConversationId(c.id)}
-                  >
-                    <span className="conv-title">{c.title}</span>
-                    <span className="conv-meta">
-                      {c.pipelineId && <span className="conv-pipeline">{c.pipelineId}</span>}
-                      {c.ragTag && <span className="conv-tag">{c.ragTag}</span>}
-                    </span>
-                  </button>
-                  <button
-                    className="conv-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteConversation(c.id);
-                    }}
-                    title="Delete"
-                    aria-label="Delete conversation"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {conversations.length > 0 && (
-              <button className="btn-refresh" onClick={onRefreshConversations}>
-                Refresh list
+            <div className="conversation-list-wrap">
+              {conversations.length === 0 ? (
+                <p className="sidebar-empty">No conversations yet.</p>
+              ) : (
+                <ul className="conversation-list">
+                  {conversations.map((c) => (
+                    <li key={c.id} className="conversation-item">
+                      <button
+                        className={`conv-btn ${currentConversationId === c.id ? 'active' : ''}`}
+                        onClick={() => setCurrentConversationId(c.id)}
+                      >
+                        <span className="conv-title">{c.title}</span>
+                        <span className="conv-meta">
+                          {c.pipelineId && <span className="conv-pipeline">{c.pipelineId}</span>}
+                          {c.ragTag && <span className="conv-tag">{c.ragTag}</span>}
+                        </span>
+                      </button>
+                      <button
+                        className="conv-delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteConversation(c.id);
+                        }}
+                        title="Delete"
+                        aria-label="Delete conversation"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="sidebar-actions">
+              {conversations.length > 0 && (
+                <button type="button" className="btn-refresh" onClick={onRefreshConversations}>
+                  Refresh list
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-clear-all"
+                onClick={() => onClearAll?.()}
+                title="Clear all Redis keys (olo-ui:*) and reset"
+              >
+                Clear all
               </button>
-            )}
+            </div>
           </div>
         </>
       )}

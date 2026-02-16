@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiJson } from './api';
 import { API } from './config';
-import { loadSession, saveSession } from './session';
+import { loadSession, saveSession, clearSession } from './session';
 import ChatView from './ChatView';
 import DocumentsView from './DocumentsView';
 import Sidebar from './Sidebar';
@@ -138,6 +138,21 @@ export default function App() {
     fetchConversations();
   };
 
+  const clearAll = async () => {
+    if (!window.confirm('Clear all Redis keys (olo-ui:*) and reset UI? This cannot be undone.')) return;
+    const { ok, data, error } = await apiJson(`${API}/store/clear`, { method: 'POST' });
+    if (ok && data?.cleared) {
+      clearSession();
+      setConversations([]);
+      setCurrentConversationId(null);
+      setRagTags([]);
+      fetchConversations();
+      fetchRagTags();
+    } else {
+      window.alert(error || data?.error || 'Clear failed. (Redis must be configured.)');
+    }
+  };
+
   return (
     <div className="app">
       <Sidebar
@@ -155,6 +170,7 @@ export default function App() {
         onNewChat={createNewChat}
         onDeleteConversation={deleteConversation}
         onRefreshConversations={fetchConversations}
+        onClearAll={clearAll}
         loading={loading}
       />
       <main className="main">

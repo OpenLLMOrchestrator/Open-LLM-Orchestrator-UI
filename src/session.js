@@ -22,3 +22,11 @@ export function saveSession(updates) {
     console.warn('session save failed', e);
   }
 }
+
+export function clearSession() {
+  try {
+    localStorage.removeItem(KEY);
+  } catch (e) {
+    console.warn('session clear failed', e);
+  }
+}

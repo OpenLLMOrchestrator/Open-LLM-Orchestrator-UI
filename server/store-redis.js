@@ -158,3 +158,15 @@ export async function deleteConversation(id) {
   }
   return false;
 }
+
+/** Delete all keys matching olo-ui:* (all chat/rag conversations, messages, rag tags). Returns { cleared, keysDeleted }. */
+export async function clearAll() {
+  const r = await redis();
+  if (!r) return { cleared: false, keysDeleted: 0 };
+  let keysDeleted = 0;
+  for await (const key of r.scanIterator({ MATCH: 'olo-ui:*', COUNT: 100 })) {
+    await r.del(key);
+    keysDeleted += 1;
+  }
+  return { cleared: true, keysDeleted };
+}

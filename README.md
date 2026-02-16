@@ -50,6 +50,8 @@ cp .env.example .env
 copy .env.example .env
 ```
 
+The server loads `.env` from the **project root** (the directory that contains `server/` and `package.json`), so behaviour is the same whether you run `npm run dev` / `npm start` from the project root or from another directory. Use the same `.env` (or same variable values) when running outside Docker so non-container execution matches container behaviour.
+
 | Variable | Description |
 |----------|-------------|
 | `PORT` | App server port (default `8002`) |

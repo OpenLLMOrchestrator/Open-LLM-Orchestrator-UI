@@ -3,7 +3,7 @@
  * - Serves the built frontend (dist/) and API routes.
  * - API only keeps minimal UI state (conversations, messages); all execution is in Temporal.
  */
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -12,8 +12,13 @@ import conversationsRouter from './routes/conversations.js';
 import chatRouter from './routes/chat.js';
 import documentsRouter from './routes/documents.js';
 import pipelinesRouter from './routes/pipelines.js';
+import storeRouter from './routes/store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Load .env from project root so behaviour matches container (same env source regardless of cwd)
+const projectRoot = path.resolve(__dirname, '..');
+loadEnv({ path: path.join(projectRoot, '.env') });
+
 const PORT = process.env.PORT || 8002;
 
 const app = express();
@@ -25,6 +30,7 @@ app.use('/api/conversations', conversationsRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/documents', documentsRouter);
 app.use('/api/pipelines', pipelinesRouter);
+app.use('/api/store', storeRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

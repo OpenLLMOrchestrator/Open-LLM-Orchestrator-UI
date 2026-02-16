@@ -168,3 +168,10 @@ export async function deleteConversation(id) {
   persist();
   return had;
 }
+
+/** Clear all Redis data for olo-ui (conversations, messages, rag tags). Returns { cleared, keysDeleted } when Redis; otherwise { cleared: false, keysDeleted: 0 }. */
+export async function clearAllStore() {
+  const r = await ensureBackend();
+  if (r && r.clearAll) return r.clearAll();
+  return { cleared: false, keysDeleted: 0 };
+}
