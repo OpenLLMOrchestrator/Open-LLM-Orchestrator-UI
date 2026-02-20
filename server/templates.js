@@ -98,31 +98,51 @@ function toExecutionCommand(raw, pipelineName, ragTag, messages, timestamp, opti
 }
 
 /**
- * Build RAG upload (document ingestion) payload for Temporal: load upload.tpl,
- * fill variables, parse JSON. If no template exists, returns default payload.
- * options.debug and options.debugID add debug fields when debug mode is on.
+ * Build RAG upload (document ingestion) payload for Temporal. Aligns with ExecutionCommand shape:
+ * { tenantId, userId, operation, pipelineName, input, metadata [, debug, debugID ] }
+ * pipelineName is "document-ingestion"; operation is configurable (env TEMPORAL_DOC_OPERATION or template).
  */
 export function getUploadPayload(ragTag, fileNames, options = {}) {
   const timestamp = Date.now();
-  const vars = {
-    ragTag: ragTag || '',
-    fileNames: JSON.stringify(fileNames || []),
-    timestamp,
-  };
+  const tenantId = process.env.TEMPORAL_TENANT_ID ?? 'default';
+  const userId = process.env.TEMPORAL_USER_ID ?? 'default';
+  const operation = process.env.TEMPORAL_DOC_OPERATION ?? 'document-ingestion';
+  const pipelineName = 'document-ingestion';
+  const input = { ragTag: ragTag || null, fileNames: fileNames || [] };
+  const metadata = { timestamp };
 
   const raw = loadTemplate(null, 'upload');
-  let out;
   if (raw) {
     try {
+      const vars = {
+        ragTag: ragTag || '',
+        fileNames: JSON.stringify(fileNames || []),
+        timestamp,
+      };
       const filled = fillTemplate(raw, vars);
-      out = JSON.parse(filled);
+      const parsed = JSON.parse(filled);
+      // If template already has ExecutionCommand shape, use it (with filled values)
+      if (parsed.input != null && parsed.metadata != null) {
+        const out = {
+          tenantId: parsed.tenantId ?? tenantId,
+          userId: parsed.userId ?? userId,
+          operation: parsed.operation ?? operation,
+          pipelineName: parsed.pipelineName ?? pipelineName,
+          input: { ...input, ...parsed.input },
+          metadata: { ...metadata, ...parsed.metadata },
+        };
+        if (options.debug && options.debugID) {
+          out.debug = true;
+          out.debugID = options.debugID;
+        }
+        return out;
+      }
     } catch (err) {
       console.warn('Upload template fill/parse failed, using default payload:', err.message);
-      out = { ragTag: ragTag || null, fileNames: fileNames || [], timestamp };
     }
-  } else {
-    out = { ragTag: ragTag || null, fileNames: fileNames || [], timestamp };
   }
+
+  const out = { tenantId, userId, operation, pipelineName, input, metadata };
   if (options.debug && options.debugID) {
     out.debug = true;
     out.debugID = options.debugID;

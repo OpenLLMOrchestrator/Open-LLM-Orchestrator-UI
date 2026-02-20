@@ -1,1 +1,1 @@
-{"ragTag":"{{ragTag}}","fileNames":{{fileNames}},"timestamp":{{timestamp}}}
+{"tenantId":"default","userId":"default","operation":"document-ingestion","pipelineName":"document-ingestion","input":{"ragTag":"{{ragTag}}","fileNames":{{fileNames}}},"metadata":{"timestamp":{{timestamp}}}}
