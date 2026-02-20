@@ -11,6 +11,31 @@
   overflow: hidden;
 }
 
+.sidebar-debug {
+  margin-bottom: 12px;
+}
+
+.sidebar-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sidebar-checkbox-label:hover {
+  color: var(--text);
+}
+
+.sidebar-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .sidebar-tabs {
   display: flex;
   gap: 4px;

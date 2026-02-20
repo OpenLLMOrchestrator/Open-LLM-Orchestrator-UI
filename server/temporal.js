@@ -7,6 +7,7 @@
  * Flow: Upload → startDocumentIngestionWorkflow() → getTemporalClient() → getUploadPayload() → client.workflow.start().
  */
 import { Client, Connection } from '@temporalio/client';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getChatPayload, getUploadPayload } from './templates.js';
@@ -57,14 +58,16 @@ function buildSearchAttributes({ pipelineName, operation, tenantId, userId }) {
 
 /**
  * Start document ingestion workflow: payload from upload.tpl, workflow name/ID/class from env.
+ * options.debug: when true, add debug: true and debugID: <UUID> to payload.
  */
-export async function startDocumentIngestionWorkflow(ragTag, fileNames) {
+export async function startDocumentIngestionWorkflow(ragTag, fileNames, options = {}) {
   const client = await getTemporalClient();
   if (!client) {
     return { started: false, workflowId: null, error: 'Temporal not configured' };
   }
 
-  const payload = getUploadPayload(ragTag, fileNames);
+  const payloadOptions = options.debug ? { debug: true, debugID: crypto.randomUUID() } : {};
+  const payload = getUploadPayload(ragTag, fileNames, payloadOptions);
   const timestamp = Date.now();
   const safeTag = (ragTag || 'default').replace(/[^a-zA-Z0-9-_]/g, '_');
 
@@ -127,8 +130,9 @@ function extractReply(result) {
 /**
  * Run chat: payload from template (TEMPLATES_DIR/<pipeline>_chat.tpl), workflow
  * name / ID / class from env. All template variables are filled and sent to Temporal.
+ * options.debug: when true, add debug: true and debugID: <UUID> to payload.
  */
-export async function runChatPipeline(pipelineId, ragTag, messages) {
+export async function runChatPipeline(pipelineId, ragTag, messages, options = {}) {
   const client = await getTemporalClient();
   if (!client) {
     if (process.env.USE_STUB_LLM === '1') {
@@ -140,7 +144,8 @@ export async function runChatPipeline(pipelineId, ragTag, messages) {
   }
 
   const timestamp = Date.now();
-  const payload = getChatPayload(pipelineId, ragTag, messages);
+  const payloadOptions = options.debug ? { debug: true, debugID: crypto.randomUUID() } : {};
+  const payload = getChatPayload(pipelineId, ragTag, messages, payloadOptions);
 
   const raw = process.env.TEMPORAL_CHAT_WORKFLOW || 'CoreWorkflow';
   const workflowNameTemplate = raw === 'chatPipelineWorkflow' ? 'CoreWorkflow' : raw;

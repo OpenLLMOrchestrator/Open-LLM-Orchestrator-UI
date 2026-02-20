@@ -40,10 +40,12 @@ router.post('/upload', upload.array('files', 20), async (req, res) => {
     return res.status(400).json({ error: 'At least one file is required' });
   }
 
+  const debug = req.body?.debug === 'true' || req.body?.debug === true;
+
   await registerRagTag(tag);
   const fileNames = files.map((f) => f.originalname || f.fieldname || 'file');
 
-  const result = await startDocumentIngestionWorkflow(tag, fileNames);
+  const result = await startDocumentIngestionWorkflow(tag, fileNames, { debug });
 
   if (!result.started && result.error) {
     return res.status(502).json({

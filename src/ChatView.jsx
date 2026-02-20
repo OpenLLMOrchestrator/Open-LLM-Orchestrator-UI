@@ -7,6 +7,7 @@ export default function ChatView({
   conversationId,
   currentPipelineId = '',
   currentRagTag = '',
+  isDebugMode = false,
   onConversationCreated,
   onEnsureConversation,
   onSelectConversation,
@@ -50,7 +51,11 @@ export default function ChatView({
       const { ok, data, error } = await apiJson(`${API}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: conversationIdToUse, content: text }),
+        body: JSON.stringify({
+          conversationId: conversationIdToUse,
+          content: text,
+          ...(isDebugMode && { debug: true }),
+        }),
       });
       return { ok, data, error };
     };

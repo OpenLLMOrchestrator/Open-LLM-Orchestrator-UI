@@ -54,10 +54,11 @@ export function loadTemplate(pipelineId, kind = 'chat') {
 
 /**
  * Build chat payload for Temporal. Worker expects ExecutionCommand:
- * { tenantId, userId, operation, input, pipelineName, metadata }
+ * { tenantId, userId, operation, input, pipelineName, metadata [, debug, debugID ] }
  * Templates can use {{pipelineName}}, {{ragTag}}, {{messages}}, {{timestamp}}.
+ * options.debug and options.debugID add debug fields when debug mode is on.
  */
-export function getChatPayload(pipelineId, ragTag, messages) {
+export function getChatPayload(pipelineId, ragTag, messages, options = {}) {
   const timestamp = Date.now();
   const pipelineName = pipelineId || 'llama-oss';
   const vars = {
@@ -71,31 +72,37 @@ export function getChatPayload(pipelineId, ragTag, messages) {
   if (raw) {
     try {
       const filled = fillTemplate(raw, vars);
-      return toExecutionCommand(JSON.parse(filled), pipelineName, ragTag, messages, timestamp);
+      return toExecutionCommand(JSON.parse(filled), pipelineName, ragTag, messages, timestamp, options);
     } catch (err) {
       console.warn('Template fill/parse failed, using default payload:', err.message);
     }
   }
 
-  return toExecutionCommand(null, pipelineName, ragTag, messages, timestamp);
+  return toExecutionCommand(null, pipelineName, ragTag, messages, timestamp, options);
 }
 
 /** Map payload to Worker ExecutionCommand format. */
-function toExecutionCommand(raw, pipelineName, ragTag, messages, timestamp) {
+function toExecutionCommand(raw, pipelineName, ragTag, messages, timestamp, options = {}) {
   const pn = raw?.pipelineName ?? raw?.pipelineId ?? pipelineName;
   const tenantId = raw?.tenantId ?? process.env.TEMPORAL_TENANT_ID ?? 'default';
   const userId = raw?.userId ?? process.env.TEMPORAL_USER_ID ?? 'default';
   const operation = raw?.operation ?? 'question-answer';
   const input = raw?.input ?? { messages: messages || [] };
   const metadata = raw?.metadata ?? { ragTag: ragTag || null, timestamp };
-  return { tenantId, userId, operation, input, pipelineName: pn, metadata };
+  const out = { tenantId, userId, operation, input, pipelineName: pn, metadata };
+  if (options.debug && options.debugID) {
+    out.debug = true;
+    out.debugID = options.debugID;
+  }
+  return out;
 }
 
 /**
  * Build RAG upload (document ingestion) payload for Temporal: load upload.tpl,
  * fill variables, parse JSON. If no template exists, returns default payload.
+ * options.debug and options.debugID add debug fields when debug mode is on.
  */
-export function getUploadPayload(ragTag, fileNames) {
+export function getUploadPayload(ragTag, fileNames, options = {}) {
   const timestamp = Date.now();
   const vars = {
     ragTag: ragTag || '',
@@ -104,18 +111,21 @@ export function getUploadPayload(ragTag, fileNames) {
   };
 
   const raw = loadTemplate(null, 'upload');
+  let out;
   if (raw) {
     try {
       const filled = fillTemplate(raw, vars);
-      return JSON.parse(filled);
+      out = JSON.parse(filled);
     } catch (err) {
       console.warn('Upload template fill/parse failed, using default payload:', err.message);
+      out = { ragTag: ragTag || null, fileNames: fileNames || [], timestamp };
     }
+  } else {
+    out = { ragTag: ragTag || null, fileNames: fileNames || [], timestamp };
   }
-
-  return {
-    ragTag: ragTag || null,
-    fileNames: fileNames || [],
-    timestamp,
-  };
+  if (options.debug && options.debugID) {
+    out.debug = true;
+    out.debugID = options.debugID;
+  }
+  return out;
 }

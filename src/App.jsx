@@ -19,6 +19,7 @@ export default function App() {
   const [currentRagTag, setCurrentRagTag] = useState(saved.currentRagTag ?? '');
   const [currentConversationId, setCurrentConversationId] = useState(saved.currentConversationId ?? null);
   const [loading, setLoading] = useState(false);
+  const [isDebugMode, setIsDebugMode] = useState(false);
 
   const isRagTab = tab === 'rag';
   const isChatTab = tab === 'chat';
@@ -158,6 +159,8 @@ export default function App() {
       <Sidebar
         tab={tab}
         setTab={setTab}
+        isDebugMode={isDebugMode}
+        onDebugModeChange={setIsDebugMode}
         conversations={conversations}
         currentConversationId={currentConversationId}
         setCurrentConversationId={setCurrentConversationId}
@@ -179,13 +182,14 @@ export default function App() {
             conversationId={currentConversationId}
             currentPipelineId={currentPipelineId}
             currentRagTag={tab === 'rag' ? currentRagTag : ''}
+            isDebugMode={isDebugMode}
             onConversationCreated={createNewChat}
             onEnsureConversation={ensureConversation}
             onSelectConversation={setCurrentConversationId}
           />
         )}
         {tab === 'documents' && (
-          <DocumentsView ragTags={ragTags} onUploadDone={fetchRagTags} />
+          <DocumentsView ragTags={ragTags} isDebugMode={isDebugMode} onUploadDone={fetchRagTags} />
         )}
       </main>
     </div>

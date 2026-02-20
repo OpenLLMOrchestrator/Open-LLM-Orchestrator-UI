@@ -3,7 +3,7 @@ import { apiJson } from './api';
 import { API } from './config';
 import './DocumentsView.css';
 
-export default function DocumentsView({ ragTags = [], onUploadDone }) {
+export default function DocumentsView({ ragTags = [], isDebugMode = false, onUploadDone }) {
   const [ragTag, setRagTag] = useState('');
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -36,6 +36,7 @@ export default function DocumentsView({ ragTags = [], onUploadDone }) {
     setResult(null);
     const formData = new FormData();
     formData.append('ragTag', tag);
+    if (isDebugMode) formData.append('debug', 'true');
     files.forEach((f) => formData.append('files', f));
 
     try {

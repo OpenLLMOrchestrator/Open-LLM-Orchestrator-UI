@@ -4,6 +4,8 @@ import './Sidebar.css';
 export default function Sidebar({
   tab,
   setTab,
+  isDebugMode,
+  onDebugModeChange,
   conversations = [],
   currentConversationId,
   setCurrentConversationId,
@@ -21,6 +23,17 @@ export default function Sidebar({
 }) {
   return (
     <aside className="sidebar">
+      <div className="sidebar-section sidebar-debug">
+        <label className="sidebar-checkbox-label">
+          <input
+            type="checkbox"
+            checked={!!isDebugMode}
+            onChange={(e) => onDebugModeChange?.(e.target.checked)}
+            className="sidebar-checkbox"
+          />
+          <span>Is Debug Mode</span>
+        </label>
+      </div>
       <div className="sidebar-tabs">
         <button
           className={tab === 'chat' ? 'active' : ''}
