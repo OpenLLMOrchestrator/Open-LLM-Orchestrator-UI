@@ -10,7 +10,7 @@ const router = Router();
  * On user input: build payload from template, start Temporal workflow, wait for response, return reply.
  */
 const handlePost = async (req, res) => {
-  const { conversationId, content } = req.body ?? {};
+  const { conversationId, content, debug } = req.body ?? {};
   if (!conversationId || content == null || String(content).trim() === '') {
     return res.status(400).json({ error: 'conversationId and content required' });
   }
@@ -27,7 +27,7 @@ const handlePost = async (req, res) => {
   const pipelineId = conv.pipelineId ?? null;
   const ragTag = conv.ragTag ?? null;
   // Start workflow using template payload and wait for reply
-  const result = await runChatPipeline(pipelineId, ragTag, messagesForLlm);
+  const result = await runChatPipeline(pipelineId, ragTag, messagesForLlm, { debug: !!debug });
 
   let assistantContent;
   if (result.success && result.reply) {
